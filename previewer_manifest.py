@@ -6,17 +6,6 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
-
-SPECIAL_WORDS = {
-    "gpt": "GPT",
-    "claude": "Claude",
-    "gemini": "Gemini",
-    "rts": "RTS",
-    "hud": "HUD",
-    "hq": "HQ",
-}
-
-
 class DesignItem(BaseModel):
     title: str
     path: str
@@ -46,44 +35,23 @@ def title_words(value: str) -> str:
     if not value.strip():
         return value
 
-    parts = [part for part in re.split(r"[-_]+", value) if part]
+    parts = [part for part in re.split(r"[-_\s]+", value) if part]
     if not parts:
         return value
 
-    converted: list[str] = []
-    for part in parts:
-        lower = part.lower()
-        if lower.isdigit():
-            converted.append(part)
-            continue
-
-        converted.append(SPECIAL_WORDS.get(lower, lower.capitalize()))
-
-    return " ".join(converted)
+    return " ".join(part if part.isdigit() else part.capitalize() for part in parts)
 
 
 def file_title(file_name: str) -> str:
     stem = Path(file_name).stem
-
-    match = re.match(r"^design-(\d+)-(.*)$", stem)
-    if match:
-        return f"{match.group(1)} - {title_words(match.group(2))}"
-
-    match = re.match(r"^(\d+)-(.*)$", stem)
-    if match:
-        return f"{match.group(1)} - {title_words(match.group(2))}"
-
     return title_words(stem)
 
 
-def group_label(folder_name: str) -> str:
-    match = re.match(r"^designs[_\- ]?(.*)$", folder_name, flags=re.IGNORECASE)
-    if match:
-        suffix = match.group(1).strip()
-        if suffix:
-            return title_words(suffix)
+def group_label(relative_dir: str) -> str:
+    if relative_dir == ".":
+        return "Root"
 
-    return title_words(folder_name)
+    return " / ".join(title_words(part) for part in relative_dir.split("/") if part)
 
 
 def rel_path(base_path: Path, target_path: Path) -> str:
@@ -95,70 +63,49 @@ def rel_path(base_path: Path, target_path: Path) -> str:
     return f"./{relative.as_posix()}"
 
 
-def build_group(group_dir: Path, base_path: Path) -> DesignGroup | None:
-    html_files = sorted(
-        [path for path in group_dir.glob("*.html") if path.name.lower() != "index.html"],
-        key=lambda path: path.name.lower(),
-    )
+def should_include_html(root_path: Path, html_path: Path) -> bool:
+    if html_path.name.lower() == "index.html":
+        return False
 
-    if not html_files:
-        return None
+    relative = html_path.relative_to(root_path)
+    if any(part.startswith(".") for part in relative.parts):
+        return False
 
-    items = [
-        DesignItem(
-            title=file_title(path.name),
-            path=rel_path(base_path, path),
-        )
-        for path in html_files
-    ]
+    if relative.parts and relative.parts[0].lower() == "design_previewer":
+        return False
 
-    return DesignGroup(
-        key=group_dir.name,
-        label=group_label(group_dir.name),
-        items=items,
-    )
+    return True
 
 
 def discover_versions(root_path: Path) -> list[DesignVersion]:
-    version_dirs = sorted(
-        [path for path in root_path.iterdir() if path.is_dir() and re.match(r"^v\d+$", path.name, re.IGNORECASE)],
-        key=lambda path: path.name.lower(),
+    all_html_files = sorted(
+        [path for path in root_path.rglob("*.html") if should_include_html(root_path, path)],
+        key=lambda path: rel_path(root_path, path).lower(),
     )
 
-    versions: list[DesignVersion] = []
+    if not all_html_files:
+        return []
 
-    if version_dirs:
-        for version_dir in version_dirs:
-            groups: list[DesignGroup] = []
-            for group_dir in sorted([path for path in version_dir.iterdir() if path.is_dir()], key=lambda path: path.name.lower()):
-                group = build_group(group_dir, root_path)
-                if group:
-                    groups.append(group)
+    grouped_items: dict[str, list[DesignItem]] = {}
+    for html_path in all_html_files:
+        relative_dir = html_path.parent.relative_to(root_path).as_posix()
+        grouped_items.setdefault(relative_dir, []).append(
+            DesignItem(
+                title=file_title(html_path.name),
+                path=rel_path(root_path, html_path),
+            )
+        )
 
-            if groups:
-                versions.append(
-                    DesignVersion(
-                        key=version_dir.name.lower(),
-                        label=version_dir.name.upper(),
-                        groups=groups,
-                    )
-                )
+    groups = [
+        DesignGroup(
+            key=group_key if group_key != "." else "root",
+            label=group_label(group_key),
+            items=items,
+        )
+        for group_key, items in sorted(grouped_items.items(), key=lambda item: item[0].lower())
+    ]
 
-        return versions
-
-    groups: list[DesignGroup] = []
-    for group_dir in sorted(
-        [path for path in root_path.iterdir() if path.is_dir() and path.name.lower().startswith("designs")],
-        key=lambda path: path.name.lower(),
-    ):
-        group = build_group(group_dir, root_path)
-        if group:
-            groups.append(group)
-
-    if groups:
-        versions.append(DesignVersion(key="v1", label="V1", groups=groups))
-
-    return versions
+    return [DesignVersion(key="all", label="All", groups=groups)]
 
 
 def build_manifest(root_path: Path, title: str, description: str) -> DesignManifest:

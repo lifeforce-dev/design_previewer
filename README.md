@@ -1,44 +1,25 @@
-# Design Previewer Setup
+# Design Previewer
 
-This previewer uses a generated `manifest.json` to discover versions, groups, and design files.
+This repository contains the runtime previewer and a portable bootstrap script.
 
-## Requirements
+## Consumer workflow
 
-- Python 3.9+
-- `pydantic` (auto-installed by the setup script)
+1. Copy `include/setup_previewer.py` into your designs root folder.
+2. Set `DESIGN_PREVIEWER_REPO=owner/design_previewer`.
+3. Run `python setup_previewer.py --serve --open`.
 
-## One command bootstrap
+The bootstrap script will:
 
-Just get it running:
+1. Resolve the latest `dev-*` tag (or use `DESIGN_PREVIEWER_TAG` if pinned).
+2. Download that tag into a sibling `design_previewer/` folder.
+3. Run the runtime setup from the downloaded repo.
+4. Generate `design_previewer/manifest.json` and optionally serve the designs root.
 
-```bash
-python setup_previewer.py --serve --open
-```
+## Filesystem-only discovery
 
-From this folder:
+Manifest generation is folder-agnostic:
 
-```bash
-python setup_previewer.py --title "Athena Design Previewer" --description "Auto-discovered from v* and design folders."
-```
-
-From anywhere:
-
-```bash
-python e:/source/athena/designs/design_previewer/setup_previewer.py --title "Athena Design Previewer" --description "Auto-discovered from v* and design folders."
-```
-
-The script will:
-
-1. Create/use a local `.venv` next to the script.
-2. Install missing dependencies in that `.venv`.
-3. Re-run itself from the `.venv` Python.
-4. Discover versions/groups/design files.
-5. Generate `manifest.json`.
-
-## Optional preview server
-
-```bash
-python setup_previewer.py --serve --open
-```
-
-This serves `index.html` locally and opens it in your browser.
+- Recursively scans `*.html` under the provided root.
+- Ignores `index.html` files.
+- Ignores hidden paths and the `design_previewer/` runtime folder.
+- Groups entries by relative directory path (or `Root` for top-level files).
