@@ -177,8 +177,8 @@ def print_next_step(script_dir: Path, previewer_dir: Path) -> None:
     print()
     print(f'  1.  cd "{script_dir}"')
     if os.name == "nt":
-        print("  2.  & .\\design_previewer\\.venv\\Scripts\\Activate.ps1")
-        print("  3.  py design_previewer/setup_previewer.py --serve --open")
+        print("  2.  .\\design_previewer\\.venv\\Scripts\\Activate.ps1")
+        print("  3.  python design_previewer/setup_previewer.py --serve --open")
     else:
         print("  2.  source ./design_previewer/.venv/bin/activate")
         print("  3.  python3 design_previewer/setup_previewer.py --serve --open")
