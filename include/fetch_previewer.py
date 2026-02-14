@@ -14,10 +14,6 @@ from pathlib import Path
 from typing import Any, cast
 
 
-# Wrapper-only bootstrap:
-# - Fetches/updates tagged design_previewer runtime beside this script.
-# - Delegates all runtime behavior to the fetched repo's setup_previewer.py.
-
 TAG_PATTERN = re.compile(r"^dev-(\d+)\.(\d+)\.(\d+)$")
 TAG_STATE_FILE = ".design_previewer_tag.json"
 DEFAULT_PREVIEWER_REPO = "lifeforce-dev/design_previewer"
@@ -156,7 +152,7 @@ def run_core_setup(script_dir: Path, previewer_dir: Path, forwarded_args: list[s
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Wrapper bootstrap for tagged design_previewer releases.")
+    parser = argparse.ArgumentParser(description="Fetch and run design_previewer release from tags.")
     parser.add_argument(
         "--previewer-repo",
         default=os.environ.get("DESIGN_PREVIEWER_REPO", DEFAULT_PREVIEWER_REPO),
