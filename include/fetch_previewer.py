@@ -165,22 +165,23 @@ def ensure_runtime_environment(previewer_dir: Path) -> None:
     env["VIRTUAL_ENV"] = str(previewer_dir / ".venv")
     env["PATH"] = str(venv_scripts_dir) + os.pathsep + env.get("PATH", "")
 
-    command = ["python", "-m", "pip", "install", "-e", str(previewer_dir)]
+    command = ["python", "-m", "pip", "install", "--quiet", "-e", str(previewer_dir)]
     result = subprocess.run(command, check=False, env=env)
     if result.returncode != 0:
         raise RuntimeError("Failed to install design_previewer runtime from pyproject.toml.")
 
 
 def print_next_step(script_dir: Path, previewer_dir: Path) -> None:
-    print("Fetch complete.")
-    print("Run:")
-    print(f'cd "{script_dir}"')
+    print()
+    print("Fetch complete. Run these 3 commands:")
+    print()
+    print(f'  1.  cd "{script_dir}"')
     if os.name == "nt":
-        print("& .\\design_previewer\\.venv\\Scripts\\Activate.ps1")
-        print("py design_previewer/setup_previewer.py --root . --manifest design_previewer/manifest.json --serve --open")
+        print("  2.  & .\\design_previewer\\.venv\\Scripts\\Activate.ps1")
+        print("  3.  py design_previewer/setup_previewer.py --serve --open")
     else:
-        print("source ./design_previewer/.venv/bin/activate")
-        print("python3 design_previewer/setup_previewer.py --root . --manifest design_previewer/manifest.json --serve --open")
+        print("  2.  source ./design_previewer/.venv/bin/activate")
+        print("  3.  python3 design_previewer/setup_previewer.py --serve --open")
 
 
 def main() -> int:
