@@ -64,6 +64,30 @@
     return null;
   }
 
+  const IFRAME_SCROLLBAR_CSS = [
+    "* { scrollbar-width: thin; scrollbar-color: #2a3547 transparent; }",
+    "::-webkit-scrollbar { width: 8px; height: 8px; }",
+    "::-webkit-scrollbar-track { background: transparent; }",
+    "::-webkit-scrollbar-thumb { background: #2a3547; border-radius: 4px; }",
+    "::-webkit-scrollbar-thumb:hover { background: #a6b3c8; }",
+  ].join("\n");
+
+  function injectScrollbarStyles() {
+    try {
+      const doc = previewEl.contentDocument;
+      if (!doc || !doc.head) {
+        return;
+      }
+
+      const style = doc.createElement("style");
+      style.textContent = IFRAME_SCROLLBAR_CSS;
+      doc.head.appendChild(style);
+    } catch (_) {
+      // Cross-origin iframe — skip silently.
+    }
+  }
+
+  previewEl.addEventListener("load", injectScrollbarStyles);
   function setPreview(item) {
     if (!item || !item.path) {
       return;
