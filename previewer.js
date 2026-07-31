@@ -14,6 +14,87 @@
     return;
   }
 
+  // Width the design is laid out at before being scaled to fit the pane.
+  // Without this the frame is only as wide as the pane, so a desktop design
+  // REFLOWS into a narrow layout instead of shrinking, and two designs cannot
+  // be compared against each other.
+  const logicalWidth = window.DESIGN_PREVIEWER_LOGICAL_WIDTH || 1600;
+
+  const layoutEl = document.querySelector(".layout");
+  const headerEl = document.querySelector(".preview-header, .preview-head");
+
+  const stageEl = document.createElement("div");
+  stageEl.className = "zoom-stage";
+  previewEl.parentNode.insertBefore(stageEl, previewEl);
+  stageEl.appendChild(previewEl);
+
+  const zoomReadoutEl = document.createElement("span");
+  zoomReadoutEl.className = "zoom-readout";
+
+  // "fit" is recomputed whenever the pane resizes; a number is a fixed scale.
+  let zoomMode = "fit";
+
+  function applyZoom() {
+    const scale = zoomMode === "fit"
+      ? Math.min(1, stageEl.clientWidth / logicalWidth)
+      : zoomMode;
+
+    previewEl.style.width = `${logicalWidth}px`;
+    // A scaled element keeps its unscaled height for layout, so the height has
+    // to be divided back up or the bottom of the design is unreachable.
+    previewEl.style.height = `${stageEl.clientHeight / scale}px`;
+    previewEl.style.transform = `scale(${scale})`;
+    zoomReadoutEl.textContent = `${Math.round(scale * 100)}%`;
+  }
+
+  function buildZoomControls() {
+    if (!headerEl) {
+      return;
+    }
+
+    const controlsEl = document.createElement("div");
+    controlsEl.className = "zoom-controls";
+
+    const zoomButtons = [];
+
+    [["Fit", "fit"], ["50%", 0.5], ["75%", 0.75], ["100%", 1]].forEach(([label, mode]) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = label;
+      button.addEventListener("click", () => {
+        zoomMode = mode;
+        zoomButtons.forEach((other) => other.classList.toggle("is-active", other === button));
+        applyZoom();
+      });
+      zoomButtons.push(button);
+      controlsEl.appendChild(button);
+    });
+
+    zoomButtons[0].classList.add("is-active");
+    controlsEl.appendChild(zoomReadoutEl);
+
+    if (layoutEl) {
+      const sidebarButton = document.createElement("button");
+      sidebarButton.type = "button";
+      sidebarButton.textContent = "Sidebar";
+      sidebarButton.addEventListener("click", () => {
+        sidebarButton.classList.toggle(
+          "is-active",
+          layoutEl.classList.toggle("sidebar-collapsed")
+        );
+        applyZoom();
+      });
+      controlsEl.appendChild(sidebarButton);
+    }
+
+    headerEl.appendChild(controlsEl);
+  }
+
+  buildZoomControls();
+  window.addEventListener("resize", applyZoom);
+  previewEl.addEventListener("load", applyZoom);
+  applyZoom();
+
   function normalizePath(pathValue) {
     return String(pathValue || "").replace(/\\/g, "/");
   }

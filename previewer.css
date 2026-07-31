@@ -54,7 +54,6 @@ body {
 }
 
 .layout {
-  max-width: 1400px;
   margin: 0 auto;
   display: grid;
   grid-template-columns: 340px minmax(0, 1fr);
@@ -166,11 +165,72 @@ body {
   min-height: 0;
 }
 
-.preview-head {
+.layout.sidebar-collapsed {
+  grid-template-columns: 0 minmax(0, 1fr);
+}
+
+.layout.sidebar-collapsed .sidebar {
+  display: none;
+}
+
+/* The frame is laid out at a fixed logical width and then scaled down to fit
+   this box. Scrolling lives here rather than on the frame, because a scaled
+   element keeps its unscaled size for layout. */
+.zoom-stage {
+  min-height: 0;
+  overflow: auto;
+  position: relative;
+}
+
+.zoom-stage > iframe {
+  display: block;
+  border: 0;
+  transform-origin: 0 0;
+}
+
+.zoom-controls {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.zoom-controls button {
+  border: 1px solid var(--border);
+  background: var(--panel-2);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 5px 10px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.zoom-controls button:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.zoom-controls button.is-active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.zoom-readout {
+  color: var(--text-dim);
+  font-size: 0.82rem;
+  min-width: 3.5em;
+  text-align: right;
+}
+
+/* .preview-head and .open-link are the older class names. The shell ships
+   .preview-header and .open-direct, so both spellings are styled and an
+   existing index.html keeps working after an update. */
+.preview-head,
+.preview-header {
   border-bottom: 1px solid var(--border);
   padding: 10px 12px;
   display: flex;
-  justify-content: space-between;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
@@ -178,12 +238,20 @@ body {
   color: var(--text-dim);
 }
 
-.preview-head strong {
+.preview-head strong,
+.preview-header .active-title {
   color: var(--text);
   font-size: 0.92rem;
+  font-weight: 600;
 }
 
-.open-link {
+.preview-header .active-path {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+}
+
+.open-link,
+.open-direct {
   text-decoration: none;
   border: 1px solid var(--border);
   color: var(--text);
@@ -191,9 +259,11 @@ body {
   border-radius: 8px;
   padding: 6px 10px;
   font-weight: 600;
+  font-size: 0.82rem;
 }
 
-.open-link:hover {
+.open-link:hover,
+.open-direct:hover {
   border-color: var(--accent);
   background: var(--accent-soft);
 }

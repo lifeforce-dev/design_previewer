@@ -23,3 +23,23 @@ Manifest generation is folder-agnostic:
 - Ignores `index.html` files.
 - Ignores hidden paths and the `design_previewer/` runtime folder.
 - Groups entries by relative directory path (or `Root` for top-level files).
+
+## Preview scaling
+
+Designs are laid out at a fixed logical width and then scaled to fit the
+preview pane, so a wide desktop design shrinks proportionally instead of
+reflowing into a narrow layout. Reflowing makes two designs incomparable,
+because what is on screen is the layout at a width nobody uses.
+
+The preview header carries Fit / 50% / 75% / 100% buttons and a Sidebar toggle.
+Fit is the default and recalculates on resize.
+
+Override the logical width before `previewer.js` loads:
+
+```html
+<script>window.DESIGN_PREVIEWER_LOGICAL_WIDTH = 1280;</script>
+```
+
+The controls are built by `previewer.js`, so an existing `index.html` picks
+them up on its next fetch with no edits.
+
